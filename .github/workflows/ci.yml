@@ -1,0 +1,25 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_DB: retobiz, POSTGRES_USER: retobiz, POSTGRES_PASSWORD: retobiz }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U retobiz" --health-interval 5s --health-retries 10
+    env:
+      DB_NAME: retobiz
+      DB_USER: retobiz
+      DB_PASSWORD: retobiz
+      DB_HOST: localhost
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements/dev.txt
+      - run: ruff check .
+      - run: python manage.py makemigrations --check --dry-run
+      - run: pytest --cov
